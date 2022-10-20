@@ -1,6 +1,6 @@
 from math import *
 import numpy as np
-import matplotlib as plt
+import matplotlib.pyplot as plt
 
 
 def f(x1, x2):
@@ -147,95 +147,91 @@ def powell(h):
     return xx
 
 
-def simplex(e):
-
+def nelder_mead(e):
     def l3(arr):
         return arr[2]
 
-    maxK = 100000
     n = 2
     a = 1
-    b = 2
-    g = 0.5
+    b = 0.5
+    g = 2
     k = 0.5
-    x1 = [-2, -4, 0]
-    x2 = [x1[0]+x1[0]*k, x1[1], 0]
-    x3 = [x1[0], x1[1]+x1[1]*k, 0]
+    x1 = [-15, -40, 0]
+    x2 = [x1[0] + x1[0] * k, x1[1], 0]
+    x3 = [x1[0], x1[1] + x1[1] * k, 0]
     x1[2] = f(x1[0], x1[1])
     x2[2] = f(x2[0], x2[1])
     x3[2] = f(x3[0], x3[1])
     x = [x1, x2, x3]
 
-    sig2 = 0
-    for i in range(1, n + 1):
-        ff = 0
-        for j in range(1, n + 1):
-            ff += x[j][2]/(n+1)
-        sig2 += pow(x[i][2]-ff, 2)/(n+1)
+    ff = (x[0][2] + x[1][2] + x[2][2]) / 3
+    sig2 = (pow(x[0][2] - ff, 2) + pow(x[1][2] - ff, 2) + pow(x[2][2] - ff, 2)) / 3
 
-    while(sqrt(sig2)>=e):
+    while (sqrt(sig2) >= e):
         x1[2] = f(x1[0], x1[1])
         x2[2] = f(x2[0], x2[1])
         x3[2] = f(x3[0], x3[1])
         x.sort(key=l3)
 
-        xc = [(x[0][0] + x[1][0]) / n, (x[0][1] + x[1][1]) / n, 0]
+        xc = [(x[0][0] + x[1][0]) / 2, (x[0][1] + x[1][1]) / 2, 0]
         xc[2] = f(xc[0], xc[1])
-        y0 = f(xc[0]-xc[2], xc[1]-xc[2])
-        x0 = [(1+a)*xc[0]-a*x[2][0], (1+a)*xc[1]-a*x[2][1], 0]
-        x0[2] = f(x0[0], x0[1])
-        y0 = f(x0[0] - y0, x0[1] - y0)
-        if(y0<x[0][2]):
-            xr = [(1-b)*xc[0]-b*x0[0], (1-b)*xc[1]-b*x0[1], 0]
-            xr[2] = f(xr[0], xr[1])
-            yr = f(xr[0]-xr[2], xr[1]-xr[2])
-            if(yr<y0):
-                x[2] = xr
+        xr = [xc[0]+a*(xc[0]-x[2][0]), xc[1]+a*(xc[1]-x[2][1]), 0]
+        xr[2] = f(xr[0],xr[1])
+        if(xr[2]<x[2][2]):
+            xe = [xc[0]+g*(xc[0]-x[2][0]), xc[1]+g*(xc[1]-x[2][1]), 0]
+            xe[2] = f(xe[0], xe[1])
+            #expand
+            if (xe[2] < x[2][2]):
+                x[2] = xe
+            #reflect
             else:
-                x[2] = x0
-        elif(y0<=x[1][2]):
-            x[2] = x0
-        elif(y0<x[2][2]):
-            xg = [(1-g)*xc[0]+g*x0[0], (1-g)*xc[1]+g*x0[1], 0]
-            xg[2] = f(xg[0], xg[1])
-            yg = f(xg[0]-xg[2], xg[1]-xg[2])
-            if(yg<x[2][2]):
-                x[2] = xg
-        else:
-            xg = [(1-g)*xc[0]+g*x[2][0], (1-g)*xc[1]+g*x[2][1], 0]
-            xg[2] = f(xg[0], xg[1])
-            yg = f(xg[0] - xg[2], xg[1] - xg[2])
-            if(yg<x[2][2]):
-                x[2] = xg
+                x[2] = xr
+        #reflect
+        elif(xr[2]<x[1][2]):
+            x[2] = xr
+        elif(xr[2]<x[2][2]):
+            xcon = [xc[0] + b * (xc[0] - x[2][0]), xc[1] + b * (xc[1] - x[2][1]), 0]
+            xcon[2] = f(xcon[0], xcon[1])
+            #outside contract
+            if(xcon[2]<=xr):
+                x[2] = xcon
+            #shrink
             else:
                 for i in range(1, n + 1):
-                    x[i][0] = x[i][0] - (x[i][0] - x[0][0]) / 2
-                    x[i][1] = x[i][1] - (x[i][1] - x[0][1]) / 2
+                    x[i][0] = (x[i][0] + x[0][0]) / 2
+                    x[i][1] = (x[i][1] + x[0][1]) / 2
+                    x[i][2] = f(x[i][0], x[i][1])
+        else:
+            xcon = [xc[0] + b*(x[2][0]-xc[0]), xc[1] + b*(x[2][1]-xc[1]), 0]
+            xcon[2] = f(xcon[0], xcon[1])
+            #inside contract
+            if(xcon[2]<x[2][2]):
+                x[2] = xcon
+            #shrink
+            else:
+                for i in range(1, n + 1):
+                    x[i][0] = (x[i][0] + x[0][0]) / 2
+                    x[i][1] = (x[i][1] + x[0][1]) / 2
+                    x[i][2] = f(x[i][0], x[i][1])
 
-        sig2 = 0
-        for i in range(1, n + 1):
-            ff = 0
-            for j in range(1, n + 1):
-                ff += x[j][2] / (n + 1)
-            sig2 += pow(x[i][2] - ff, 2) / (n + 1)
-        maxK -=1
-        if(maxK<=0): break
+        ff = (x[0][2] + x[1][2]+x[2][2]) / 3
+        sig2 = (pow(x[0][2] - ff,2) + pow(x[1][2] - ff,2) + pow(x[2][2] - ff,2)) / 3
 
-    return [(x[0][0]+x[1][0]+x[2][0])/3, (x[0][1]+x[1][1]+x[2][1])/3]
+    return [(x[0][0] + x[1][0] + x[2][0]) / 3, (x[0][1] + x[1][1] + x[2][1]) / 3]
 
+e = 0.001
 
-e = 0.01
+pwll = powell(e)
+nlmd = nelder_mead(e)
+print("Powell's solution: ", pwll, "\nSimplex solution: ", nlmd)
 
-print("Powell's solution: ", powell(e), "\nSimplex solution: ", simplex(e))
-
-
-#xg1, xg2 = np.mgrid[-10:10:5j, -10:10:5j]
-
-#xg1 = np.arange(-10, 10, 0.5)
-#xg2 = np.arange(-10, 10, 0.5)
-#xx1, xx2 = np.meshgrid(xg1, xg2)
-#yg = f(xx1, xx2)
-#fgr, cont = plt.subplots()
-#cont.contour(yg)
-
-#plt.show()
+levels = [-0.9, -0.8, -0.7, -0.6, -0.5, -0.4, -0.3, -0.2, -0.10, -0.05, -0.01, 0.0, 0.01, 0.05, 0.10,0.20,0.30, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+xg1 = np.arange(-3, 3.125, 0.125)
+xg2 = np.arange(-3, 3.125, 0.125)
+xg1, xg2 = np.meshgrid(xg1, xg2)
+f2 = np.vectorize(f)
+yg = f2(xg1, xg2)
+cont = plt.contour(xg1, xg2, yg, levels=levels)
+plt.plot(pwll[0],pwll[1],color="red", marker=".")
+plt.plot(nlmd[0],nlmd[1],color="blue", marker=".")
+plt.show()
