@@ -124,6 +124,10 @@ def findLamb(e, c2, xb, res):
     return c1, c1_arr, lamb_arr, xf_arr, xf_list_arr
 
 
+def J(c1, c2):
+    return pow(f1b(c1), 2)
+
+
 lamb = 1.1
 _e = 1e-5
 _ta = 0
